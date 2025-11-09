@@ -25,6 +25,7 @@ export interface BulkMatterUploadRequest {
   cdpUrl: string;
   data?: string; // Optional field for bulk matter upload input data
   selectedFirm?: string; // Selected law firm from dropdown
+  selectedDocument?: string; // Selected custom document from dropdown
 }
 
 export interface BulkMatterUploadResponse {

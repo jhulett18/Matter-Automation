@@ -6,6 +6,7 @@ import { useBulkMatterUpload } from '../hooks/useBulkMatterUpload';
 interface TestingDocumentUploadProps {
   cdpUrl: string;
   selectedFirm: string;
+  selectedDocument: string;
   onLogsChange?: (logs: any[]) => void;
   onStatusChange?: (status: string) => void;
 }
@@ -13,6 +14,7 @@ interface TestingDocumentUploadProps {
 export const TestingDocumentUpload = ({
   cdpUrl,
   selectedFirm,
+  selectedDocument,
   onLogsChange,
   onStatusChange,
 }: TestingDocumentUploadProps) => {
@@ -38,12 +40,12 @@ export const TestingDocumentUpload = ({
     }
   }, [status, onStatusChange]);
 
-  // Pass selectedFirm to handleRunBulkMatterUpload
+  // Pass selectedFirm and selectedDocument to handleRunBulkMatterUpload
   const handleSubmit = () => {
-    handleRunBulkMatterUpload(selectedFirm);
+    handleRunBulkMatterUpload(selectedFirm, selectedDocument);
   };
 
-  const isDisabled = isLoading || !selectedFirm;
+  const isDisabled = isLoading || !selectedFirm || !selectedDocument;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -82,9 +84,15 @@ export const TestingDocumentUpload = ({
         </p>
       )}
 
-      {selectedFirm && (
+      {selectedFirm && !selectedDocument && (
+        <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+          Please select a custom document before running
+        </p>
+      )}
+
+      {selectedFirm && selectedDocument && (
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Will switch to: {selectedFirm}
+          Will switch to: {selectedFirm} and open document: {selectedDocument}
         </p>
       )}
     </div>

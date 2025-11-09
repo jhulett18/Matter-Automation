@@ -6,9 +6,10 @@ import { logStore, addLog } from '@/lib/logStore';
 export async function POST(request: NextRequest) {
   try {
     console.log('[bulk-matter-upload] API endpoint hit');
-    const { cdpUrl, selectedFirm } = await request.json();
+    const { cdpUrl, selectedFirm, selectedDocument } = await request.json();
     console.log('[bulk-matter-upload] Received cdpUrl:', cdpUrl);
     console.log('[bulk-matter-upload] Received selectedFirm:', selectedFirm);
+    console.log('[bulk-matter-upload] Received selectedDocument:', selectedDocument);
 
     if (!cdpUrl) {
       console.error('[bulk-matter-upload] CDP URL is missing');
@@ -41,12 +42,21 @@ export async function POST(request: NextRequest) {
     });
     console.log('[bulk-matter-upload] Added first log');
 
+    if (selectedDocument) {
+      addLog(sessionId, {
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: `Selected document: ${selectedDocument}`
+      });
+      console.log('[bulk-matter-upload] Added document log');
+    }
+
     addLog(sessionId, {
       timestamp: new Date().toISOString(),
       level: 'info',
       message: `Connecting to browser at: ${cdpUrl}`
     });
-    console.log('[bulk-matter-upload] Added second log');
+    console.log('[bulk-matter-upload] Added browser connection log');
 
     // Verify logs were set
     const verifyLogs = logStore.get(sessionId);
@@ -62,7 +72,7 @@ export async function POST(request: NextRequest) {
     console.log('[bulk-matter-upload] Script path:', scriptPath);
 
     // Spawn the Python process using venv python
-    const args = [scriptPath, cdpUrl, selectedFirm];
+    const args = [scriptPath, cdpUrl, selectedFirm, selectedDocument || ''];
     console.log('[bulk-matter-upload] Spawning Python with args:', args.length, 'arguments');
 
     const pythonProcess = spawn(pythonPath, args);

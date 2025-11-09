@@ -5,12 +5,16 @@ import { useBulkMatterUpload } from '../hooks/useBulkMatterUpload';
 
 interface BulkMatterUploadFormProps {
   cdpUrl: string;
+  selectedFirm: string;
+  selectedDocument: string;
   onLogsChange?: (logs: any[]) => void;
   onStatusChange?: (status: string) => void;
 }
 
 export const BulkMatterUploadForm = ({
   cdpUrl,
+  selectedFirm,
+  selectedDocument,
   onLogsChange,
   onStatusChange,
 }: BulkMatterUploadFormProps) => {
@@ -36,6 +40,13 @@ export const BulkMatterUploadForm = ({
     }
   }, [status, onStatusChange]);
 
+  // Handle form submission
+  const handleSubmit = () => {
+    handleRunBulkMatterUpload(selectedFirm, selectedDocument);
+  };
+
+  const isDisabled = isLoading || !selectedFirm || !selectedDocument;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
@@ -60,15 +71,30 @@ export const BulkMatterUploadForm = ({
       </div>
 
       <button
-        onClick={handleRunBulkMatterUpload}
-        disabled={isLoading}
+        onClick={handleSubmit}
+        disabled={isDisabled}
         className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
       >
         {status === 'running' ? 'Running...' : 'Run Bulk Matter Upload'}
       </button>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        Uploads matter data to the selected law firm
-      </p>
+
+      {!selectedFirm && (
+        <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+          Please select a law firm before running
+        </p>
+      )}
+
+      {selectedFirm && !selectedDocument && (
+        <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+          Please select a custom document before running
+        </p>
+      )}
+
+      {selectedFirm && selectedDocument && (
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Will upload to: {selectedFirm} using document: {selectedDocument}
+        </p>
+      )}
     </div>
   );
 };

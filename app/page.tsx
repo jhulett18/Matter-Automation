@@ -8,6 +8,7 @@ import { ChromeStatusDisplay } from '@/app/features/chromeManagement/components/
 import { OpenLawmaticsButton } from '@/app/features/lawmatics/components/OpenLawmaticsButton';
 import { TestingDocumentUpload } from '@/app/features/lawmatics/components/TestingDocumentUpload';
 import FirmSelector from '@/app/features/lawmatics/components/FirmSelector';
+import DocumentSelector from '@/app/features/lawmatics/components/DocumentSelector';
 
 type Status = 'idle' | 'testing' | 'processing' | 'running' | 'complete' | 'error';
 
@@ -19,6 +20,7 @@ export default function Home() {
   const [parsedData, setParsedData] = useState<any>(null);
   const [chromeStatus, setChromeStatus] = useState<any>(null);
   const [selectedFirm, setSelectedFirm] = useState<string>('');
+  const [selectedDocument, setSelectedDocument] = useState<string>('');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -175,11 +177,15 @@ export default function Home() {
               onStatusChange={setStatus}
             />
 
-            {/* Firm Selection and Testing Document Upload */}
+            {/* Firm Selection and Document Selection */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
               <FirmSelector
                 selectedFirm={selectedFirm}
                 onFirmSelect={setSelectedFirm}
+              />
+              <DocumentSelector
+                selectedDocument={selectedDocument}
+                onDocumentSelect={setSelectedDocument}
               />
             </div>
 
@@ -187,6 +193,7 @@ export default function Home() {
             <TestingDocumentUpload
               cdpUrl={cdpUrl}
               selectedFirm={selectedFirm}
+              selectedDocument={selectedDocument}
               onLogsChange={setLogs}
               onStatusChange={setStatus}
             />

@@ -11,15 +11,16 @@ export const useBulkMatterUpload = (cdpUrl: string) => {
   const [status, setStatus] = useState<Status>('idle');
   const [logs, setLogs] = useState<LawmaticsLog[]>([]);
 
-  const handleRunBulkMatterUpload = useCallback(async (selectedFirm?: string) => {
+  const handleRunBulkMatterUpload = useCallback(async (selectedFirm?: string, selectedDocument?: string) => {
     console.log('[useBulkMatterUpload] Running bulk matter upload automation');
     console.log('[useBulkMatterUpload] CDP URL:', cdpUrl);
     console.log('[useBulkMatterUpload] Selected Firm:', selectedFirm);
+    console.log('[useBulkMatterUpload] Selected Document:', selectedDocument);
     setStatus('running');
     setLogs([]);
 
     try {
-      const response = await runBulkMatterUpload({ cdpUrl, data, selectedFirm });
+      const response = await runBulkMatterUpload({ cdpUrl, data, selectedFirm, selectedDocument });
       console.log('[useBulkMatterUpload] API response:', response);
       const sessionId = response.sessionId;
 
