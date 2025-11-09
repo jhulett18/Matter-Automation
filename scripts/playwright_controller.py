@@ -82,21 +82,15 @@ def main():
                 page.wait_for_timeout(3000)
                 current_url = page.url
                 log(f"Current URL after login: {current_url}")
-            else:
-                log("No password provided - skipping login", "info")
-                current_url = page.url
 
-            # Only proceed to sidebar if on dashboard (after login is complete)
-            if "dashboard" in current_url.lower():
-                log("✓ Login complete - on dashboard page, proceeding with sidebar interaction", "success")
-
-                # Navigate sidebar (for Open Lawmatics button)
+                # Immediately run sidebar menu code after login
+                log("Running sidebar menu extraction...", "info")
                 navigate_sidebar(page)
 
                 # Log placeholder for future bulk matter updates
                 log("📋 Ready for bulk matter updates (feature pending)", "info")
             else:
-                log("⚠️ Not on dashboard page - skipping sidebar interaction", "warning")
+                log("No password provided - skipping login", "info")
 
             # Don't close browser - leave it running
             # browser.close() - commented out intentionally

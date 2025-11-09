@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 interface Log {
   timestamp: string;
@@ -13,12 +13,41 @@ interface LogViewerProps {
 }
 
 export default function LogViewer({ logs }: LogViewerProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingRef = useRef(false);
 
-  // Auto-scroll to bottom when new logs arrive
+  // Auto-scroll to bottom when new logs arrive and auto-scroll is enabled
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+    if (autoScrollEnabled && scrollContainerRef.current && !isUserScrollingRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [logs, autoScrollEnabled]);
+
+  // Detect manual scrolling
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10;
+
+    // If user scrolls up, disable auto-scroll
+    if (!isAtBottom && autoScrollEnabled) {
+      isUserScrollingRef.current = true;
+      setAutoScrollEnabled(false);
+    }
+  };
+
+  // Toggle auto-scroll and scroll to bottom when enabled
+  const toggleAutoScroll = () => {
+    const newValue = !autoScrollEnabled;
+    setAutoScrollEnabled(newValue);
+    isUserScrollingRef.current = false;
+
+    if (newValue && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  };
 
   const getLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -47,13 +76,31 @@ export default function LogViewer({ logs }: LogViewerProps) {
   };
 
   return (
-    <div className="h-[600px] overflow-y-auto bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-      {logs.length === 0 ? (
-        <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
-          <p>No logs yet. Start a test or automation to see logs here.</p>
-        </div>
-      ) : (
-        <div className="space-y-3 font-mono text-sm">
+    <div className="relative">
+      <div className="absolute top-2 right-2 z-10">
+        <button
+          onClick={toggleAutoScroll}
+          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+            autoScrollEnabled
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-gray-300 text-gray-700 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'
+          }`}
+          title={autoScrollEnabled ? 'Auto-scroll enabled (click to disable)' : 'Auto-scroll disabled (click to enable)'}
+        >
+          {autoScrollEnabled ? '🔒 Auto' : '🔓 Manual'}
+        </button>
+      </div>
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="h-[1000px] overflow-y-auto bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 pt-12"
+      >
+        {logs.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
+            <p>No logs yet. Start a test or automation to see logs here.</p>
+          </div>
+        ) : (
+          <div className="space-y-3 font-mono text-sm">
           {logs.map((log, index) => (
             <div key={index} className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -69,9 +116,9 @@ export default function LogViewer({ logs }: LogViewerProps) {
               </div>
             </div>
           ))}
-          <div ref={bottomRef} />
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

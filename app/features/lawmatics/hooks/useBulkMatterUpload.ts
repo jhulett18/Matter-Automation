@@ -1,37 +1,43 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { runBulkMatters } from '../api/bulkMatters';
+import { runBulkMatterUpload } from '../api/bulkMatterUpload';
 import type { LawmaticsLog } from '../types/lawmatics.types';
 
 type Status = 'idle' | 'running' | 'complete' | 'error';
 
-export const useBulkMatters = (cdpUrl: string) => {
+export const useBulkMatterUpload = (cdpUrl: string) => {
   const [data, setData] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [logs, setLogs] = useState<LawmaticsLog[]>([]);
 
-  const handleRunBulkMatters = useCallback(async () => {
-    console.log('[useBulkMatters] Running bulk matters automation');
+  const handleRunBulkMatterUpload = useCallback(async (selectedFirm?: string) => {
+    console.log('[useBulkMatterUpload] Running bulk matter upload automation');
+    console.log('[useBulkMatterUpload] CDP URL:', cdpUrl);
+    console.log('[useBulkMatterUpload] Selected Firm:', selectedFirm);
     setStatus('running');
     setLogs([]);
 
     try {
-      const response = await runBulkMatters({ cdpUrl, data });
+      const response = await runBulkMatterUpload({ cdpUrl, data, selectedFirm });
+      console.log('[useBulkMatterUpload] API response:', response);
       const sessionId = response.sessionId;
 
-      console.log('[useBulkMatters] Got sessionId:', sessionId);
+      console.log('[useBulkMatterUpload] Got sessionId:', sessionId);
 
       // Set up EventSource for real-time logs
       const eventSource = new EventSource(`/api/stream-logs?sessionId=${sessionId}`);
 
       eventSource.onmessage = (event) => {
+        console.log('[useBulkMatterUpload] Received log event:', event.data);
         const log: LawmaticsLog = JSON.parse(event.data);
 
         if (log.type === 'complete') {
+          console.log('[useBulkMatterUpload] Process completed');
           setStatus('complete');
           eventSource.close();
         } else if (log.type === 'error') {
+          console.log('[useBulkMatterUpload] Process error');
           setStatus('error');
           eventSource.close();
         } else {
@@ -39,12 +45,21 @@ export const useBulkMatters = (cdpUrl: string) => {
         }
       };
 
-      eventSource.onerror = () => {
+      eventSource.onerror = (error) => {
+        console.error('[useBulkMatterUpload] EventSource error:', error);
         setStatus('error');
+        setLogs((prev) => [
+          ...prev,
+          {
+            level: 'error',
+            message: 'Lost connection to log stream',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
         eventSource.close();
       };
     } catch (error) {
-      console.error('[useBulkMatters] Error:', error);
+      console.error('[useBulkMatterUpload] Error:', error);
       setStatus('error');
       setLogs((prev) => [
         ...prev,
@@ -62,7 +77,7 @@ export const useBulkMatters = (cdpUrl: string) => {
     setData,
     status,
     logs,
-    handleRunBulkMatters,
+    handleRunBulkMatterUpload,
     isLoading: status === 'running',
   };
 };

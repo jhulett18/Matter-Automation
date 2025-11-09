@@ -5,7 +5,7 @@ export interface LawmaticsAuthCredentials {
 
 export interface LawmaticsLoginRequest {
   cdpUrl: string;
-  password: string;
+  // Password is read from LAWMATICS_PASSWORD environment variable
 }
 
 export interface LawmaticsLoginResponse {
@@ -21,12 +21,13 @@ export interface LawmaticsLog {
   type?: 'complete' | 'error';
 }
 
-export interface BulkMattersRequest {
+export interface BulkMatterUploadRequest {
   cdpUrl: string;
-  data?: string; // Optional field for bulk matters input data
+  data?: string; // Optional field for bulk matter upload input data
+  selectedFirm?: string; // Selected law firm from dropdown
 }
 
-export interface BulkMattersResponse {
+export interface BulkMatterUploadResponse {
   success: boolean;
   sessionId: string;
   message: string;

@@ -6,13 +6,23 @@ import { logStore, addLog } from '@/lib/logStore';
 export async function POST(request: NextRequest) {
   try {
     console.log('[test-browser] API endpoint hit');
-    const { cdpUrl, password } = await request.json();
+    const { cdpUrl } = await request.json();
+
+    // Read password from environment variable
+    const password = process.env.LAWMATICS_PASSWORD;
     console.log('[test-browser] Received cdpUrl:', cdpUrl, 'password length:', password?.length || 0);
 
     if (!cdpUrl) {
       return NextResponse.json(
         { error: 'CDP URL is required' },
         { status: 400 }
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { error: 'LAWMATICS_PASSWORD environment variable is not set' },
+        { status: 500 }
       );
     }
 
@@ -34,11 +44,8 @@ export async function POST(request: NextRequest) {
     console.log('[test-browser] Python path:', pythonPath);
     console.log('[test-browser] Script path:', scriptPath);
 
-    // Spawn the Python process using venv python, pass password if provided
-    const args = [scriptPath, cdpUrl];
-    if (password) {
-      args.push(password);
-    }
+    // Spawn the Python process using venv python with password from env
+    const args = [scriptPath, cdpUrl, password];
     console.log('[test-browser] Spawning Python with args:', args.length, 'arguments');
 
     const pythonProcess = spawn(pythonPath, args);

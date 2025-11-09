@@ -6,7 +6,8 @@ import StatusIndicator from '@/components/StatusIndicator';
 import { ChromeControls } from '@/app/features/chromeManagement/components/ChromeControls';
 import { ChromeStatusDisplay } from '@/app/features/chromeManagement/components/ChromeStatusDisplay';
 import { OpenLawmaticsButton } from '@/app/features/lawmatics/components/OpenLawmaticsButton';
-import { BulkMattersForm } from '@/app/features/lawmatics/components/BulkMattersForm';
+import { TestingDocumentUpload } from '@/app/features/lawmatics/components/TestingDocumentUpload';
+import FirmSelector from '@/app/features/lawmatics/components/FirmSelector';
 
 type Status = 'idle' | 'testing' | 'processing' | 'running' | 'complete' | 'error';
 
@@ -17,6 +18,7 @@ export default function Home() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<any>(null);
   const [chromeStatus, setChromeStatus] = useState<any>(null);
+  const [selectedFirm, setSelectedFirm] = useState<string>('');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,9 +175,18 @@ export default function Home() {
               onStatusChange={setStatus}
             />
 
-            {/* Bulk Matters Form */}
-            <BulkMattersForm
+            {/* Firm Selection and Testing Document Upload */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              <FirmSelector
+                selectedFirm={selectedFirm}
+                onFirmSelect={setSelectedFirm}
+              />
+            </div>
+
+            {/* Testing Document Upload Form */}
+            <TestingDocumentUpload
               cdpUrl={cdpUrl}
+              selectedFirm={selectedFirm}
               onLogsChange={setLogs}
               onStatusChange={setStatus}
             />

@@ -7,7 +7,6 @@ import type { LawmaticsLog } from '../types/lawmatics.types';
 type Status = 'idle' | 'testing' | 'processing' | 'running' | 'complete' | 'error';
 
 export const useLawmaticsAuth = (cdpUrl: string) => {
-  const [password, setPassword] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [logs, setLogs] = useState<LawmaticsLog[]>([]);
 
@@ -17,7 +16,7 @@ export const useLawmaticsAuth = (cdpUrl: string) => {
     setLogs([]);
 
     try {
-      const response = await openLawmatics({ cdpUrl, password });
+      const response = await openLawmatics({ cdpUrl });
       const sessionId = response.sessionId;
 
       console.log('[useLawmaticsAuth] Got sessionId:', sessionId);
@@ -36,6 +35,14 @@ export const useLawmaticsAuth = (cdpUrl: string) => {
           eventSource.close();
         } else {
           setLogs((prev) => [...prev, log]);
+
+          // Check if firms extraction completed and reload page
+          if (log.message === 'FIRMS_EXTRACTION_COMPLETE') {
+            console.log('[useLawmaticsAuth] Firms extraction complete, reloading page in 2 seconds...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
         }
       };
 
@@ -55,11 +62,9 @@ export const useLawmaticsAuth = (cdpUrl: string) => {
         },
       ]);
     }
-  }, [cdpUrl, password]);
+  }, [cdpUrl]);
 
   return {
-    password,
-    setPassword,
     status,
     logs,
     handleOpenLawmatics,

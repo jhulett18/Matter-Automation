@@ -5,6 +5,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('sessionId');
 
+  console.log('[stream-logs] Stream requested for sessionId:', sessionId);
+
   if (!sessionId) {
     return new Response('Session ID required', { status: 400 });
   }
@@ -15,6 +17,25 @@ export async function GET(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      console.log('[stream-logs] Stream started for sessionId:', sessionId);
+
+      // Wait a moment for the bulk-matter-upload route to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log('[stream-logs] All sessions in store:', Array.from(logStore.keys()));
+
+      // Send initial logs immediately if they exist
+      const initialLogs = logStore.get(sessionId) || [];
+      console.log('[stream-logs] Initial logs count:', initialLogs.length);
+      console.log('[stream-logs] Initial logs:', JSON.stringify(initialLogs));
+      if (initialLogs.length > 0) {
+        initialLogs.forEach(log => {
+          const data = `data: ${JSON.stringify(log)}\n\n`;
+          controller.enqueue(encoder.encode(data));
+        });
+        lastSentIndex = initialLogs.length;
+      }
+
       // Poll for new logs every 100ms
       const interval = setInterval(() => {
         const logs = logStore.get(sessionId) || [];
