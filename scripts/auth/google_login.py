@@ -1,0 +1,232 @@
+"""
+Google OAuth login automation for Lawmatics
+"""
+from playwright.sync_api import Page
+import sys
+import os
+
+# Add parent directory to path to import from sibling modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.logger import log
+
+
+def perform_google_login(page: Page, password: str) -> bool:
+    """
+    Perform Google OAuth login for Lawmatics
+
+    Args:
+        page: Playwright Page object on the login page
+        password: Google account password
+
+    Returns:
+        bool: True if login was successful, False otherwise
+    """
+    try:
+        log("Login page detected - starting auto-login process...")
+
+        # Step 1: Find and click the login button
+        log("Looking for login button...")
+        login_found = False
+
+        # Try multiple strategies for Lawmatics login button
+        # Strategy 1: Try text-based search for common Google login text
+        log("Strategy 1: Trying to find login button by text...")
+        login_text_options = ["Sign in with Google", "Continue with Google", "Google", "Sign in"]
+        for text_option in login_text_options:
+            try:
+                login_by_text = page.get_by_role("button", name=text_option)
+                if login_by_text.count() > 0:
+                    log(f"✓ Found login button with text '{text_option}'", "success")
+                    login_by_text.first.click()
+                    login_found = True
+                    break
+            except:
+                pass
+
+        # Strategy 2: Look for button containing Google icon/text anywhere
+        if not login_found:
+            log("Strategy 2: Looking for button containing 'Google'...")
+            try:
+                google_buttons = page.locator("button:has-text('Google')")
+                count = google_buttons.count()
+                log(f"Found {count} button(s) containing 'Google'")
+                if count > 0:
+                    google_buttons.first.click()
+                    log("✓ Clicked button via has-text('Google')", "success")
+                    login_found = True
+            except Exception as e:
+                log(f"Strategy 2 failed: {str(e)}", "warning")
+
+        # Strategy 3: Try original XPath
+        if not login_found:
+            log("Strategy 3: Trying original XPath for login button...")
+            try:
+                login_button_xpath = "/html/body/div[1]/div[1]/div[1]/div/div[2]/button[1]/div/span/span"
+                login_button = page.locator(f"xpath={login_button_xpath}")
+                login_button.wait_for(state="visible", timeout=5000)
+                log("✓ Found login button via XPath", "success")
+                login_button.click()
+                login_found = True
+            except Exception as e:
+                log(f"Strategy 3 failed: {str(e)}", "warning")
+
+        # Strategy 4: Look for any button in the login area
+        if not login_found:
+            log("Strategy 4: Looking for any clickable button...")
+            try:
+                all_buttons = page.locator("button")
+                count = all_buttons.count()
+                log(f"Found {count} total buttons on page")
+                # Try to click the first visible button
+                for i in range(count):
+                    button = all_buttons.nth(i)
+                    if button.is_visible():
+                        button_text = button.text_content() or ""
+                        log(f"Trying button {i}: '{button_text}'")
+                        button.click()
+                        login_found = True
+                        log(f"✓ Clicked button {i}", "success")
+                        break
+            except Exception as e:
+                log(f"Strategy 4 failed: {str(e)}", "warning")
+
+        if login_found:
+            log("✓ Clicked login button - waiting for Google login redirect...", "success")
+        else:
+            # Take screenshot for debugging
+            try:
+                screenshot_path = "/tmp/lawmatics_login_debug.png"
+                page.screenshot(path=screenshot_path)
+                log(f"📸 Debug screenshot saved to: {screenshot_path}", "warning")
+            except:
+                pass
+
+            log(f"Current page title: {page.title()}", "warning")
+            log(f"Current page URL: {page.url}", "warning")
+            raise Exception("Could not find Lawmatics login button")
+
+        # Wait for Google login page
+        page.wait_for_timeout(1000)
+        log(f"Current URL: {page.url}")
+
+        # Step 2: Click on account selection (jonathan@legaleasemarketing.com)
+        log("Looking for Google account selection...")
+
+        # Try multiple selector strategies
+        account_found = False
+
+        # Strategy 1: Try by exact text content
+        log("Strategy 1: Looking for account by text content...")
+        try:
+            account_by_text = page.get_by_text("jonathan@legaleasemarketing.com")
+            if account_by_text.count() > 0:
+                log(f"✓ Found {account_by_text.count()} element(s) with the email text", "success")
+                account_by_text.first.click()
+                log("✓ Clicked account via text selector", "success")
+                account_found = True
+        except Exception as e:
+            log(f"Strategy 1 failed: {str(e)}", "warning")
+
+        # Strategy 2: Try original XPath if text search failed
+        if not account_found:
+            log("Strategy 2: Trying original XPath selector...")
+            try:
+                account_xpath = "/html/body/div[1]/div[1]/div[2]/div/div/div[2]/div/div/div[1]/form/span/section/div/div/div/div/ul/li[1]/div/div[1]/div"
+                account_selector = page.locator(f"xpath={account_xpath}")
+                account_selector.wait_for(state="visible", timeout=5000)
+                log("✓ Found account via XPath", "success")
+
+                account_text = account_selector.text_content()
+                log(f"Account element text: '{account_text}'")
+
+                account_selector.click()
+                log("✓ Clicked account via XPath", "success")
+                account_found = True
+            except Exception as e:
+                log(f"Strategy 2 failed: {str(e)}", "warning")
+
+        # Strategy 3: Try to find any div containing the email
+        if not account_found:
+            log("Strategy 3: Looking for any div containing the email...")
+            try:
+                account_divs = page.locator("div:has-text('jonathan@legaleasemarketing.com')")
+                count = account_divs.count()
+                log(f"Found {count} divs containing the email")
+
+                if count > 0:
+                    # Click the first one
+                    account_divs.first.click()
+                    log("✓ Clicked account via div:has-text", "success")
+                    account_found = True
+            except Exception as e:
+                log(f"Strategy 3 failed: {str(e)}", "warning")
+
+        if not account_found:
+            log("ERROR: Could not find Google account selector with any strategy!", "error")
+
+            # Take a screenshot for debugging
+            try:
+                screenshot_path = "/tmp/google_login_debug.png"
+                page.screenshot(path=screenshot_path)
+                log(f"📸 Debug screenshot saved to: {screenshot_path}", "warning")
+            except Exception as e:
+                log(f"Could not save screenshot: {str(e)}", "warning")
+
+            # Log current page title and URL
+            log(f"Current page title: {page.title()}", "warning")
+            log(f"Current page URL: {page.url}", "warning")
+
+            log("Please check the page manually or update the selectors", "error")
+            raise Exception("Failed to find Google account selector")
+
+        # Wait for password page
+        page.wait_for_timeout(2000)
+        log("Waiting for password dialog...")
+
+        # Step 3: Enter password
+        log("Looking for password field...")
+        # Try common password input selectors
+        password_field = page.locator("input[type='password']").first
+        password_field.wait_for(state="visible", timeout=10000)
+        log("✓ Found password field", "success")
+
+        log("Entering password...")
+        password_field.fill(password)
+        log("✓ Password entered", "success")
+
+        # Step 4: Press Enter
+        log("Pressing Enter to submit...")
+        password_field.press("Enter")
+        log("✓ Submitted password", "success")
+
+        # Step 5: Poll for 2FA completion
+        log("⏸️  WAITING FOR 2FA - Please enter your 2FA code in the browser window", "warning")
+        log("Polling every 3 seconds to detect when authentication is complete...", "warning")
+
+        max_attempts = 40  # 40 attempts * 3 seconds = 2 minutes max
+        attempt = 0
+        authenticated = False
+
+        while attempt < max_attempts:
+            attempt += 1
+            page.wait_for_timeout(3000)  # Wait 3 seconds between checks
+
+            current_url = page.url
+            log(f"Check {attempt}/{max_attempts}: Current URL - {current_url}")
+
+            if "dashboard" in current_url.lower():
+                log("✓ Successfully logged in to Lawmatics!", "success")
+                authenticated = True
+                break
+
+        if not authenticated:
+            log(f"Timeout waiting for 2FA. Current URL: {page.url}", "warning")
+            log("You may need to complete 2FA or check for login errors", "warning")
+            return False
+
+        return True
+
+    except Exception as e:
+        log(f"Error during login process: {str(e)}", "error")
+        log("Login process failed - you may need to log in manually", "warning")
+        return False
